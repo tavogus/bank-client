@@ -2,13 +2,14 @@
 
 import { useEffect, useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
-import { cardApi } from '@/lib/api';
-import { CardDTO } from '@/types/bank';
+import { cardApi, invoiceApi } from '@/lib/api';
+import { CardDTO, InvoiceDTO } from '@/types/bank';
 import toast from 'react-hot-toast';
 
 export default function CardsPage() {
     const { isAuthenticated } = useAuth();
     const [cards, setCards] = useState<CardDTO[]>([]);
+    const [invoices, setInvoices] = useState<Record<number, InvoiceDTO[]>>({});
     const [isLoading, setIsLoading] = useState(true);
     const [newCardName, setNewCardName] = useState('');
     const [isCreating, setIsCreating] = useState(false);
@@ -20,6 +21,25 @@ export default function CardsPage() {
             try {
                 const response = await cardApi.getCardsByUserId();
                 setCards(response.data);
+                
+                // Fetch invoices for each card
+                const invoicePromises = response.data.map(async (card) => {
+                    try {
+                        const invoiceResponse = await invoiceApi.getCardInvoices(card.id);
+                        return { cardId: card.id, invoices: invoiceResponse.data };
+                    } catch (error) {
+                        console.error(`Failed to fetch invoices for card ${card.id}`);
+                        return { cardId: card.id, invoices: [] };
+                    }
+                });
+
+                const invoiceResults = await Promise.all(invoicePromises);
+                const invoiceMap = invoiceResults.reduce((acc, { cardId, invoices }) => {
+                    acc[cardId] = invoices;
+                    return acc;
+                }, {} as Record<number, InvoiceDTO[]>);
+
+                setInvoices(invoiceMap);
             } catch (error) {
                 toast.error('Failed to load cards');
             } finally {
@@ -115,6 +135,51 @@ export default function CardsPage() {
                             </div>
                         </div>
                     ))}
+                </div>
+            </div>
+
+            <div className="bg-white shadow rounded-lg p-6">
+                <h2 className="text-2xl font-bold text-gray-900 mb-4">Card Invoices</h2>
+                <div className="overflow-x-auto">
+                    <table className="min-w-full divide-y divide-gray-200">
+                        <thead className="bg-gray-50">
+                            <tr>
+                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Card</th>
+                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Amount</th>
+                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Due Date</th>
+                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                            </tr>
+                        </thead>
+                        <tbody className="bg-white divide-y divide-gray-200">
+                            {Object.entries(invoices).map(([cardId, cardInvoices]) => 
+                                cardInvoices.map((invoice) => {
+                                    const card = cards.find(c => c.id === parseInt(cardId));
+                                    return (
+                                        <tr key={invoice.id}>
+                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                                {card?.cardHolderName} ({card?.cardNumber})
+                                            </td>
+                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                                ${invoice.totalAmount.toFixed(2)}
+                                            </td>
+                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                                {new Date(invoice.dueDate).toLocaleDateString()}
+                                            </td>
+                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                                <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                                                    invoice.status === 'PAID' ? 'bg-green-100 text-green-800' :
+                                                    invoice.status === 'CLOSED' ? 'bg-yellow-100 text-yellow-800' :
+                                                    'bg-red-100 text-red-800'
+                                                }`}>
+                                                    {invoice.status}
+                                                </span>
+                                            </td>
+                                        </tr>
+                                    );
+                                })
+                            )}
+                        </tbody>
+                    </table>
                 </div>
             </div>
         </div>

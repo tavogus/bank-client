@@ -20,6 +20,11 @@ const api = axios.create({
 
 // Add token to requests if it exists
 api.interceptors.request.use((config) => {
+    // Skip token for auth routes
+    if (config.url?.includes('/api/auth')) {
+        return config;
+    }
+
     const token = localStorage.getItem('token');
     if (token) {
         config.headers.Authorization = `Bearer ${token}`;

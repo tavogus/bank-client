@@ -34,11 +34,26 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         try {
             const response = await authApi.login({ username: email, password });
             console.log('Login response:', response.data);
-            const { accessToken, username, authenticated } = response.data;
+            const { accessToken, username, authenticated, expiration } = response.data;
             
             if (authenticated && accessToken) {
                 console.log('Setting token:', accessToken);
-                Cookies.set('token', accessToken, { expires: 1 }); // Expira em 1 dia
+                // Remove old token first
+                Cookies.remove('token');
+                localStorage.removeItem('token');
+                
+                // Calculate expiration time from the token's expiration date
+                const expirationDate = new Date(expiration);
+                const now = new Date();
+                const expiresInDays = Math.ceil((expirationDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+                
+                // Set new token with proper expiration
+                Cookies.set('token', accessToken, { 
+                    expires: expiresInDays > 0 ? expiresInDays : 1, // Use token expiration or 1 day as fallback
+                    secure: true, // Only send over HTTPS
+                    sameSite: 'strict' // Prevent CSRF attacks
+                });
+                localStorage.setItem('token', accessToken);
                 setToken(accessToken);
                 setUser({ id: 0, email: username, fullName: '', cpf: '' });
                 router.push('/dashboard');
@@ -65,7 +80,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     const logout = () => {
         console.log('Logging out - current token:', token);
+        // Remove token from all storage locations
         Cookies.remove('token');
+        localStorage.removeItem('token');
         setToken(null);
         setUser(null);
         router.push('/');
