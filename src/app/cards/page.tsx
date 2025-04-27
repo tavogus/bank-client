@@ -6,14 +6,14 @@ import { cardApi, invoiceApi } from '@/lib/api';
 import { CardDTO, InvoiceDTO } from '@/types/bank';
 import { formatDate } from '@/lib/utils';
 import toast from 'react-hot-toast';
+import { useRouter } from 'next/navigation';
 
 export default function CardsPage() {
     const { isAuthenticated } = useAuth();
+    const router = useRouter();
     const [cards, setCards] = useState<CardDTO[]>([]);
     const [invoices, setInvoices] = useState<Record<number, InvoiceDTO[]>>({});
     const [isLoading, setIsLoading] = useState(true);
-    const [newCardName, setNewCardName] = useState('');
-    const [isCreating, setIsCreating] = useState(false);
 
     useEffect(() => {
         if (!isAuthenticated) return;
@@ -51,23 +51,6 @@ export default function CardsPage() {
         fetchCards();
     }, [isAuthenticated]);
 
-    const handleCreateCard = async (e: React.FormEvent) => {
-        e.preventDefault();
-        if (!newCardName.trim()) return;
-
-        setIsCreating(true);
-        try {
-            const response = await cardApi.createCard({ cardHolderName: newCardName });
-            setCards((prev) => [...prev, response.data]);
-            setNewCardName('');
-            toast.success('Card created successfully');
-        } catch (error) {
-            toast.error('Failed to create card');
-        } finally {
-            setIsCreating(false);
-        }
-    };
-
     if (!isAuthenticated) {
         return (
             <div className="text-center py-12">
@@ -86,28 +69,17 @@ export default function CardsPage() {
 
     return (
         <div className="space-y-6">
+            <div className="flex justify-end">
+                <button
+                    onClick={() => router.push('/cards/new')}
+                    className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                >
+                    New Card
+                </button>
+            </div>
+
             <div className="bg-white shadow rounded-lg p-6">
-                <h2 className="text-2xl font-bold text-gray-900 mb-4">Your Cards</h2>
-                
-                <form onSubmit={handleCreateCard} className="mb-6">
-                    <div className="flex gap-4">
-                        <input
-                            type="text"
-                            value={newCardName}
-                            onChange={(e) => setNewCardName(e.target.value)}
-                            placeholder="Enter cardholder name"
-                            className="flex-1 rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-                            required
-                        />
-                        <button
-                            type="submit"
-                            disabled={isCreating}
-                            className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50"
-                        >
-                            {isCreating ? 'Creating...' : 'Create New Card'}
-                        </button>
-                    </div>
-                </form>
+                <h2 className="text-2xl font-bold text-gray-900 mb-6">Your Cards</h2>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     {cards.map((card) => (

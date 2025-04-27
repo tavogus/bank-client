@@ -6,17 +6,13 @@ import { transactionApi } from '@/lib/api';
 import { TransactionResponseDTO } from '@/types/bank';
 import { formatDate } from '@/lib/utils';
 import toast from 'react-hot-toast';
+import { useRouter } from 'next/navigation';
 
 export default function TransactionsPage() {
     const { isAuthenticated } = useAuth();
+    const router = useRouter();
     const [transactions, setTransactions] = useState<TransactionResponseDTO[]>([]);
     const [isLoading, setIsLoading] = useState(true);
-    const [isTransferring, setIsTransferring] = useState(false);
-    const [transferData, setTransferData] = useState({
-        destinationAccountNumber: '',
-        amount: '',
-        description: '',
-    });
 
     useEffect(() => {
         if (!isAuthenticated) return;
@@ -34,36 +30,6 @@ export default function TransactionsPage() {
 
         fetchTransactions();
     }, [isAuthenticated]);
-
-    const handleTransfer = async (e: React.FormEvent) => {
-        e.preventDefault();
-        setIsTransferring(true);
-
-        try {
-            await transactionApi.transfer({
-                destinationAccountNumber: transferData.destinationAccountNumber,
-                amount: parseFloat(transferData.amount),
-                description: transferData.description,
-            });
-
-            // Refresh transactions
-            const response = await transactionApi.getUserTransactions();
-            setTransactions(response.data);
-
-            // Reset form
-            setTransferData({
-                destinationAccountNumber: '',
-                amount: '',
-                description: '',
-            });
-
-            toast.success('Transfer completed successfully');
-        } catch (error) {
-            toast.error('Transfer failed. Please check the details and try again.');
-        } finally {
-            setIsTransferring(false);
-        }
-    };
 
     if (!isAuthenticated) {
         return (
@@ -83,72 +49,13 @@ export default function TransactionsPage() {
 
     return (
         <div className="space-y-6">
-            <div className="bg-white shadow rounded-lg p-6">
-                <h2 className="text-2xl font-bold text-gray-900 mb-4">Make a Transfer</h2>
-                <form onSubmit={handleTransfer} className="space-y-4">
-                    <div>
-                        <label htmlFor="destinationAccount" className="block text-sm font-medium text-gray-700">
-                            Destination Account Number
-                        </label>
-                        <input
-                            type="text"
-                            id="destinationAccount"
-                            value={transferData.destinationAccountNumber}
-                            onChange={(e) =>
-                                setTransferData((prev) => ({
-                                    ...prev,
-                                    destinationAccountNumber: e.target.value,
-                                }))
-                            }
-                            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-                            required
-                        />
-                    </div>
-                    <div>
-                        <label htmlFor="amount" className="block text-sm font-medium text-gray-700">
-                            Amount
-                        </label>
-                        <input
-                            type="number"
-                            id="amount"
-                            value={transferData.amount}
-                            onChange={(e) =>
-                                setTransferData((prev) => ({
-                                    ...prev,
-                                    amount: e.target.value,
-                                }))
-                            }
-                            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-                            required
-                            min="0.01"
-                            step="0.01"
-                        />
-                    </div>
-                    <div>
-                        <label htmlFor="description" className="block text-sm font-medium text-gray-700">
-                            Description (Optional)
-                        </label>
-                        <input
-                            type="text"
-                            id="description"
-                            value={transferData.description}
-                            onChange={(e) =>
-                                setTransferData((prev) => ({
-                                    ...prev,
-                                    description: e.target.value,
-                                }))
-                            }
-                            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-                        />
-                    </div>
-                    <button
-                        type="submit"
-                        disabled={isTransferring}
-                        className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50"
-                    >
-                        {isTransferring ? 'Processing...' : 'Transfer'}
-                    </button>
-                </form>
+            <div className="flex justify-end">
+                <button
+                    onClick={() => router.push('/transactions/new')}
+                    className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                >
+                    New Transfer
+                </button>
             </div>
 
             <div className="bg-white shadow rounded-lg p-6">
