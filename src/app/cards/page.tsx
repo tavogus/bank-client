@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { cardApi, invoiceApi } from '@/lib/api';
 import { CardDTO, InvoiceDTO } from '@/types/bank';
+import { formatDate } from '@/lib/utils';
 import toast from 'react-hot-toast';
 
 export default function CardsPage() {
@@ -110,76 +111,64 @@ export default function CardsPage() {
 
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     {cards.map((card) => (
-                        <div
-                            key={card.id}
-                            className="bg-gradient-to-r from-indigo-500 to-purple-600 rounded-lg p-6 text-white shadow-lg"
-                        >
-                            <div className="flex justify-between items-start mb-4">
-                                <div>
-                                    <h3 className="text-lg font-semibold">{card.cardHolderName}</h3>
-                                    <p className="text-sm opacity-75">Card Number</p>
-                                    <p className="text-xl tracking-wider">{card.cardNumber}</p>
+                        <div key={card.id} className="col-span-1">
+                            <div className="bg-gradient-to-r from-indigo-500 to-purple-600 rounded-lg p-6 text-white shadow-lg">
+                                <div className="flex justify-between items-start mb-4">
+                                    <div>
+                                        <h3 className="text-lg font-semibold">{card.cardHolderName}</h3>
+                                        <p className="text-sm opacity-75">Card Number</p>
+                                        <p className="text-xl tracking-wider">{card.cardNumber}</p>
+                                    </div>
+                                    <div className="text-right">
+                                        <p className="text-sm opacity-75">Expires</p>
+                                        <p className="text-sm">
+                                            {formatDate(card.expirationDate)}
+                                        </p>
+                                        <p className="text-sm opacity-75 mt-2">CVV</p>
+                                        <p className="text-sm">
+                                            {card.cvv}
+                                        </p>
+                                    </div>
                                 </div>
-                                <div className="text-right">
-                                    <p className="text-sm opacity-75">Expires</p>
+                                <div className="mt-4">
+                                    <p className="text-sm opacity-75">Created</p>
                                     <p className="text-sm">
-                                        {new Date(card.expirationDate).toLocaleDateString()}
+                                        {formatDate(card.createdAt)}
                                     </p>
                                 </div>
                             </div>
-                            <div className="mt-4">
-                                <p className="text-sm opacity-75">Created</p>
-                                <p className="text-sm">
-                                    {new Date(card.createdAt).toLocaleDateString()}
-                                </p>
-                            </div>
+
+                            {invoices[card.id] && invoices[card.id].length > 0 && (
+                                <div className="mt-4 bg-white rounded-lg shadow p-6">
+                                    <h3 className="text-lg font-semibold text-gray-900 mb-4">Card Invoice</h3>
+                                    <div className="space-y-3">
+                                        <div>
+                                            <p className="text-sm text-gray-500">Amount</p>
+                                            <p className="text-lg font-medium text-gray-900">
+                                                ${invoices[card.id][0].totalAmount.toFixed(2)}
+                                            </p>
+                                        </div>
+                                        <div>
+                                            <p className="text-sm text-gray-500">Due Date</p>
+                                            <p className="text-sm text-gray-900">
+                                                {formatDate(invoices[card.id][0].dueDate)}
+                                            </p>
+                                        </div>
+                                        <div>
+                                            <p className="text-sm text-gray-500">Status</p>
+                                            <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                                                invoices[card.id][0].status === 'PAID' ? 'bg-green-100 text-green-800' :
+                                                invoices[card.id][0].status === 'CLOSED' ? 'bg-yellow-100 text-yellow-800' :
+                                                'bg-red-100 text-red-800'
+                                            }`}>
+                                                {invoices[card.id][0].status}
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
                         </div>
                     ))}
-                </div>
-            </div>
-
-            <div className="bg-white shadow rounded-lg p-6">
-                <h2 className="text-2xl font-bold text-gray-900 mb-4">Card Invoices</h2>
-                <div className="overflow-x-auto">
-                    <table className="min-w-full divide-y divide-gray-200">
-                        <thead className="bg-gray-50">
-                            <tr>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Card</th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Amount</th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Due Date</th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                            </tr>
-                        </thead>
-                        <tbody className="bg-white divide-y divide-gray-200">
-                            {Object.entries(invoices).map(([cardId, cardInvoices]) => 
-                                cardInvoices.map((invoice) => {
-                                    const card = cards.find(c => c.id === parseInt(cardId));
-                                    return (
-                                        <tr key={invoice.id}>
-                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                                {card?.cardHolderName} ({card?.cardNumber})
-                                            </td>
-                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                                ${invoice.totalAmount.toFixed(2)}
-                                            </td>
-                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                                {new Date(invoice.dueDate).toLocaleDateString()}
-                                            </td>
-                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                                <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                                                    invoice.status === 'PAID' ? 'bg-green-100 text-green-800' :
-                                                    invoice.status === 'CLOSED' ? 'bg-yellow-100 text-yellow-800' :
-                                                    'bg-red-100 text-red-800'
-                                                }`}>
-                                                    {invoice.status}
-                                                </span>
-                                            </td>
-                                        </tr>
-                                    );
-                                })
-                            )}
-                        </tbody>
-                    </table>
                 </div>
             </div>
         </div>

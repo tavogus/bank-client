@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { accountApi, transactionApi } from '@/lib/api';
 import { AccountDTO, TransactionResponseDTO } from '@/types/bank';
+import { formatDate } from '@/lib/utils';
 import toast from 'react-hot-toast';
 import { useRouter } from 'next/navigation';
 
@@ -69,7 +70,7 @@ export default function DashboardPage() {
                     <div className="bg-purple-50 p-4 rounded-lg">
                         <h3 className="text-sm font-medium text-purple-600">Member Since</h3>
                         <p className="text-2xl font-semibold text-gray-900">
-                            {new Date(account?.createdAt || '').toLocaleDateString()}
+                            {formatDate(account?.createdAt || '')}
                         </p>
                     </div>
                 </div>
@@ -99,7 +100,7 @@ export default function DashboardPage() {
                             {transactions.map((transaction) => (
                                 <tr key={transaction.id}>
                                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                        {new Date(transaction.createdAt).toLocaleDateString()}
+                                        {formatDate(transaction.createdAt)}
                                     </td>
                                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                                         {transaction.type}

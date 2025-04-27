@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { transactionApi } from '@/lib/api';
 import { TransactionResponseDTO } from '@/types/bank';
+import { formatDate } from '@/lib/utils';
 import toast from 'react-hot-toast';
 
 export default function TransactionsPage() {
@@ -177,7 +178,7 @@ export default function TransactionsPage() {
                             {transactions.map((transaction) => (
                                 <tr key={transaction.id}>
                                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                        {new Date(transaction.createdAt).toLocaleDateString()}
+                                        {formatDate(transaction.createdAt)}
                                     </td>
                                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                                         {transaction.type}

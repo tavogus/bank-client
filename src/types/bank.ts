@@ -34,6 +34,7 @@ export type CardDTO = {
     cardNumber: string;
     cardHolderName: string;
     expirationDate: string;
+    cvv: string;
     userId: number;
     createdAt: string;
     updatedAt: string;
