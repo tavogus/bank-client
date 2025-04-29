@@ -7,20 +7,40 @@ import { TransactionResponseDTO } from '@/types/bank';
 import { formatDate } from '@/lib/utils';
 import toast from 'react-hot-toast';
 import { useRouter } from 'next/navigation';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+
+interface PaginationState {
+  page: number;
+  size: number;
+  totalPages: number;
+  totalElements: number;
+}
 
 export default function TransactionsPage() {
     const { isAuthenticated } = useAuth();
     const router = useRouter();
     const [transactions, setTransactions] = useState<TransactionResponseDTO[]>([]);
     const [isLoading, setIsLoading] = useState(true);
+    const [pagination, setPagination] = useState<PaginationState>({
+        page: 0,
+        size: 10,
+        totalPages: 0,
+        totalElements: 0
+    });
 
     useEffect(() => {
         if (!isAuthenticated) return;
 
         const fetchTransactions = async () => {
             try {
-                const response = await transactionApi.getUserTransactions();
-                setTransactions(response.data);
+                const response = await transactionApi.getUserTransactions(pagination.page, pagination.size);
+                setTransactions(response.data.content);
+                setPagination(prev => ({
+                    ...prev,
+                    totalPages: response.data.totalPages,
+                    totalElements: response.data.totalElements
+                }));
             } catch (error) {
                 toast.error('Failed to load transactions');
             } finally {
@@ -29,7 +49,11 @@ export default function TransactionsPage() {
         };
 
         fetchTransactions();
-    }, [isAuthenticated]);
+    }, [isAuthenticated, pagination.page, pagination.size]);
+
+    const handlePageChange = (newPage: number) => {
+        setPagination(prev => ({ ...prev, page: newPage }));
+    };
 
     if (!isAuthenticated) {
         return (
@@ -49,74 +73,98 @@ export default function TransactionsPage() {
 
     return (
         <div className="space-y-6">
-            <div className="flex justify-end">
-                <button
-                    onClick={() => router.push('/transactions/new')}
-                    className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-                >
+            <div className="flex justify-between items-center">
+                <h1 className="text-2xl font-bold">Transactions</h1>
+                <Button variant="default" onClick={() => router.push('/transactions/new')}>
                     New Transfer
-                </button>
+                </Button>
             </div>
 
-            <div className="bg-white shadow rounded-lg p-6">
-                <h2 className="text-2xl font-bold text-gray-900 mb-4">Transaction History</h2>
-                <div className="overflow-x-auto">
-                    <table className="min-w-full divide-y divide-gray-200">
-                        <thead className="bg-gray-50">
-                            <tr>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    Date
-                                </th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    Type
-                                </th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    From/To
-                                </th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    Amount
-                                </th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    Status
-                                </th>
-                            </tr>
-                        </thead>
-                        <tbody className="bg-white divide-y divide-gray-200">
-                            {transactions.map((transaction) => (
-                                <tr key={transaction.id}>
-                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                        {formatDate(transaction.createdAt)}
-                                    </td>
-                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                        {transaction.type}
-                                    </td>
-                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                        {transaction.type === 'TRANSFER'
-                                            ? `${transaction.sourceAccountNumber} → ${transaction.destinationAccountNumber}`
-                                            : transaction.sourceAccountNumber}
-                                    </td>
-                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                        R$ {transaction.amount.toFixed(2)}
-                                    </td>
-                                    <td className="px-6 py-4 whitespace-nowrap">
-                                        <span
-                                            className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                                                transaction.status === 'COMPLETED'
-                                                    ? 'bg-green-100 text-green-800'
-                                                    : transaction.status === 'PENDING'
-                                                    ? 'bg-yellow-100 text-yellow-800'
-                                                    : 'bg-red-100 text-red-800'
-                                            }`}
-                                        >
-                                            {transaction.status}
-                                        </span>
-                                    </td>
+            <Card>
+                <CardHeader>
+                    <CardTitle>Transaction History</CardTitle>
+                </CardHeader>
+                <CardContent>
+                    <div className="overflow-x-auto">
+                        <table className="min-w-full divide-y divide-gray-200">
+                            <thead className="bg-gray-50">
+                                <tr>
+                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                        Date
+                                    </th>
+                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                        Type
+                                    </th>
+                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                        From/To
+                                    </th>
+                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                        Amount
+                                    </th>
+                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                        Status
+                                    </th>
                                 </tr>
-                            ))}
-                        </tbody>
-                    </table>
-                </div>
-            </div>
+                            </thead>
+                            <tbody className="bg-white divide-y divide-gray-200">
+                                {transactions.map((transaction) => (
+                                    <tr key={transaction.id}>
+                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                            {formatDate(transaction.createdAt)}
+                                        </td>
+                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                            {transaction.type}
+                                        </td>
+                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                            {transaction.type === 'TRANSFER'
+                                                ? `${transaction.sourceAccountNumber} → ${transaction.destinationAccountNumber}`
+                                                : transaction.sourceAccountNumber}
+                                        </td>
+                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                            R$ {transaction.amount.toFixed(2)}
+                                        </td>
+                                        <td className="px-6 py-4 whitespace-nowrap">
+                                            <span
+                                                className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                                                    transaction.status === 'COMPLETED'
+                                                        ? 'bg-green-100 text-green-800'
+                                                        : transaction.status === 'PENDING'
+                                                        ? 'bg-yellow-100 text-yellow-800'
+                                                        : 'bg-red-100 text-red-800'
+                                                }`}
+                                            >
+                                                {transaction.status}
+                                            </span>
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div className="flex items-center justify-between mt-4">
+                        <div className="text-sm text-gray-700">
+                            Showing {transactions.length} of {pagination.totalElements} transactions
+                        </div>
+                        <div className="flex space-x-2">
+                            <Button
+                                variant="outline"
+                                onClick={() => handlePageChange(pagination.page - 1)}
+                                disabled={pagination.page === 0}
+                            >
+                                Previous
+                            </Button>
+                            <Button
+                                variant="outline"
+                                onClick={() => handlePageChange(pagination.page + 1)}
+                                disabled={pagination.page >= pagination.totalPages - 1}
+                            >
+                                Next
+                            </Button>
+                        </div>
+                    </div>
+                </CardContent>
+            </Card>
         </div>
     );
 } 

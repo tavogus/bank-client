@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { accountApi, transactionApi } from '@/lib/api';
-import { AccountDTO, TransactionResponseDTO } from '@/types/bank';
+import { AccountDTO, TransactionResponseDTO, PageResponse } from '@/types/bank';
 import { formatDate } from '@/lib/utils';
 import toast from 'react-hot-toast';
 import { useRouter } from 'next/navigation';
@@ -25,10 +25,10 @@ export default function DashboardPage() {
             try {
                 const [accountResponse, transactionsResponse] = await Promise.all([
                     accountApi.getAccountByUserId(),
-                    transactionApi.getUserTransactions(),
+                    transactionApi.getUserTransactions(0, 5), // Get first 5 transactions for dashboard
                 ]);
                 setAccount(accountResponse.data);
-                setTransactions(transactionsResponse.data);
+                setTransactions(transactionsResponse.data.content);
             } catch (error) {
                 console.error('Error fetching dashboard data:', error);
                 toast.error('Failed to load account data');

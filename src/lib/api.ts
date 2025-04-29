@@ -7,6 +7,7 @@ import {
     CardDTO, 
     CardPurchaseDTO, 
     InvoiceDTO, 
+    PageResponse,
     TokenDTO, 
     TransactionRequestDTO, 
     TransactionResponseDTO, 
@@ -64,8 +65,8 @@ export const cardApi = {
 export const transactionApi = {
     transfer: (data: TransactionRequestDTO) => 
         api.post<TransactionResponseDTO>('/api/transactions/transfer', data),
-    getUserTransactions: () => 
-        api.get<TransactionResponseDTO[]>('/api/transactions/user'),
+    getUserTransactions: (page: number = 0, size: number = 10) => 
+        api.get<PageResponse<TransactionResponseDTO>>(`/api/transactions/user?page=${page}&size=${size}`),
 };
 
 export const invoiceApi = {
