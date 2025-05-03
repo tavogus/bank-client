@@ -7,6 +7,7 @@ import { CardDTO, InvoiceDTO } from '@/types/bank';
 import { formatDate } from '@/lib/utils';
 import toast from 'react-hot-toast';
 import { useRouter } from 'next/navigation';
+import { Button } from '@/components/ui/button';
 
 export default function CardsPage() {
     const { isAuthenticated } = useAuth();
@@ -136,6 +137,29 @@ export default function CardsPage() {
                                                 {invoices[card.id][0].status}
                                             </span>
                                         </div>
+                                        {invoices[card.id][0].status === 'CLOSED' && (
+                                            <div className="mt-4">
+                                                <Button
+                                                    onClick={async () => {
+                                                        try {
+                                                            await invoiceApi.payInvoice(invoices[card.id][0].id);
+                                                            toast.success('Invoice paid successfully');
+                                                            // Refresh the invoices
+                                                            const invoiceResponse = await invoiceApi.getCardInvoices(card.id);
+                                                            setInvoices(prev => ({
+                                                                ...prev,
+                                                                [card.id]: invoiceResponse.data
+                                                            }));
+                                                        } catch (error) {
+                                                            toast.error('Failed to pay invoice');
+                                                        }
+                                                    }}
+                                                    className="w-full"
+                                                >
+                                                    Pay Invoice
+                                                </Button>
+                                            </div>
+                                        )}
                                     </div>
                                 </div>
                             )}

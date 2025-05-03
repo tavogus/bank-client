@@ -74,7 +74,7 @@ export default function TransactionsPage() {
     return (
         <div className="space-y-6">
             <div className="flex justify-between items-center">
-                <h1 className="text-2xl font-bold">Transactions</h1>
+                <h1 className="text-2xl font-bold text-gray-900">Transactions</h1>
                 <Button variant="default" onClick={() => router.push('/transactions/new')}>
                     New Transfer
                 </Button>
@@ -82,7 +82,7 @@ export default function TransactionsPage() {
 
             <Card>
                 <CardHeader>
-                    <CardTitle>Transaction History</CardTitle>
+                    <CardTitle className="text-gray-900">Transaction History</CardTitle>
                 </CardHeader>
                 <CardContent>
                     <div className="overflow-x-auto">
